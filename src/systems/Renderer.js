@@ -14,6 +14,9 @@ class Renderer {
     );
     this.camera.position.set(0, 1.8, 5);
 
+    // Add camera to scene so we can parent objects to it
+    this.scene.add(this.camera);
+
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(this.renderer.domElement);

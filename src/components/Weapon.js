@@ -19,11 +19,45 @@ class Weapon {
     this.portalA.active = false;
     this.portalB.active = false;
 
+    // Create portal gun mesh and muzzle flash
+    this.createPortalGunMesh();
+
     this.bindEvents();
+  }
+
+  createPortalGunMesh() {
+    // Create gun body
+    const gunGeo = new THREE.BoxGeometry(0.2, 0.2, 0.5);
+    const gunMat = new THREE.MeshPhongMaterial({ color: 0x222222 });
+    this.gunMesh = new THREE.Mesh(gunGeo, gunMat);
+
+    // Add gun to camera
+    Renderer.camera.add(this.gunMesh);
+
+    // Position gun in camera space
+    this.gunMesh.position.set(0.5, -0.3, -0.7);
+
+    // Store original Z for recoil
+    this.defaultGunZ = this.gunMesh.position.z;
+    this.isRecoiling = false;
+    this.recoilTimer = 0;
+
+    // Create muzzle flash
+    const flashGeo = new THREE.SphereGeometry(0.05, 8, 8);
+    const flashMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    this.muzzleFlash = new THREE.Mesh(flashGeo, flashMat);
+
+    // Add muzzle flash to gun tip
+    this.gunMesh.add(this.muzzleFlash);
+    this.muzzleFlash.position.set(0, 0, -0.3);
+    this.muzzleFlash.visible = false;
+    this.muzzleFlashTimer = 0;
   }
 
   bindEvents() {
     window.addEventListener('mousedown', (e) => {
+      if (document.pointerLockElement !== document.body) return;
+
       // Left click = 0, Right click = 2
       if (e.button === 0) {
         this.shootPortal(this.portalA);
@@ -53,7 +87,7 @@ class Weapon {
     );
 
     // Use Cannon raycast
-    const result = new Physics.world.rayTestClosest(fromCannon, toCannon);
+    const result = Physics.world.rayTestClosest(fromCannon, toCannon);
 
     if (result.hasHit) {
       // Position the portal
@@ -69,36 +103,59 @@ class Weapon {
       );
       portal.setPositionAndNormal(hitPoint, normal);
     }
+
+    // Trigger recoil and muzzle flash
+    this.triggerRecoil();
+    this.showMuzzleFlash();
   }
 
-  // Teleport check logic: if player's bounding sphere intersects with a portal, teleport to the other one.
-  update() {
+  triggerRecoil() {
+    this.gunMesh.position.z = this.defaultGunZ - 0.1;
+    this.isRecoiling = true;
+    this.recoilTimer = 0.1; // Recoil lasts 0.1 seconds
+  }
+
+  showMuzzleFlash() {
+    this.muzzleFlash.visible = true;
+    this.muzzleFlashTimer = 0.05; // Flash for 0.05 seconds
+  }
+
+  update(delta) {
+    // Update recoil
+    if (this.isRecoiling) {
+      this.recoilTimer -= delta;
+      if (this.recoilTimer <= 0) {
+        this.gunMesh.position.z = this.defaultGunZ;
+        this.isRecoiling = false;
+      }
+    }
+
+    // Update muzzle flash
+    if (this.muzzleFlash.visible) {
+      this.muzzleFlashTimer -= delta;
+      if (this.muzzleFlashTimer <= 0) {
+        this.muzzleFlash.visible = false;
+      }
+    }
+
+    // Portal teleport logic
     if (!this.portalA.active || !this.portalB.active) return;
-    // Distance from player to each portal
+
     const playerPos = this.player.body.position;
     const distA = this.portalA.mesh.position.distanceTo(playerPos);
     const distB = this.portalB.mesh.position.distanceTo(playerPos);
 
-    // Arbitrary small threshold to detect overlap
     const threshold = 1.0;
-
     if (distA < threshold) {
-      // Teleport from A to B
       this.teleport(this.portalA, this.portalB);
     } else if (distB < threshold) {
-      // Teleport from B to A
       this.teleport(this.portalB, this.portalA);
     }
   }
 
   teleport(fromPortal, toPortal) {
-    // Move player position
     this.player.body.position.copy(toPortal.mesh.position);
-    // Adjust velocity
     this.player.body.velocity.set(0, 0, 0);
-
-    // Attempt to preserve orientation. A full solution would
-    // require adjusting yaw/pitch to match portal normal angles.
   }
 }
 

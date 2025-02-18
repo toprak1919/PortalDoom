@@ -2,32 +2,142 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>DOOM-Portal MVP</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOOM Portal</title>
     <style>
-      body, html {
+      body {
         margin: 0;
-        padding: 0;
         overflow: hidden;
-        height: 100%;
-        background: #000;
-        color: #fff;
-        font-family: sans-serif;
+        font-family: "Impact", sans-serif;
       }
-      #info {
-        position: absolute;
+
+      #start-menu {
+        position: fixed;
         top: 0;
         left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #ff0000;
+        z-index: 1000;
+      }
+
+      #start-menu h1 {
+        font-size: 4em;
+        text-shadow: 3px 3px 0px #000;
+        margin-bottom: 1em;
+      }
+
+      #start-button {
+        font-family: "Impact", sans-serif;
+        font-size: 2em;
+        padding: 0.5em 1em;
+        background: #ff0000;
+        color: #000;
+        border: none;
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+
+      #start-button:hover {
+        transform: scale(1.1);
+        background: #ff3333;
+      }
+
+      #game-ui {
+        display: none;
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      #hud {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 2rem;
         padding: 1rem;
-        z-index: 9999;
-        background: rgba(0, 0, 0, 0.5);
+        background: rgba(0, 0, 0, 0.7);
+        border: 2px solid #ff0000;
+      }
+
+      #health, #ammo {
+        font-size: 24px;
+        color: #ff0000;
+        text-shadow: 2px 2px 2px #000;
+      }
+
+      #minimap {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        width: 200px;
+        height: 200px;
+        background: rgba(0, 0, 0, 0.7);
+        border: 2px solid #ff0000;
+      }
+
+      #crosshair {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #ff0000;
+        font-size: 24px;
+        pointer-events: none;
+      }
+
+      #weapon-selector {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        display: flex;
+        gap: 1rem;
+      }
+
+      .weapon-slot {
+        width: 60px;
+        height: 60px;
+        background: rgba(0, 0, 0, 0.7);
+        border: 2px solid #ff0000;
+        color: #ff0000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+      }
+
+      .weapon-slot.active {
+        background: rgba(255, 0, 0, 0.3);
       }
     </style>
   </head>
   <body>
-    <div id="info">
-      <p>Click to lock pointer. WASD to move, mouse to look, SPACE to jump.</p>
-      <p>Left Click: Place Portal A, Right Click: Place Portal B</p>
+    <div id="start-menu">
+      <h1>DOOM PORTAL</h1>
+      <button id="start-button">START GAME</button>
     </div>
+
+    <div id="game-ui">
+      <div id="hud">
+        <div id="health">HEALTH: 100</div>
+        <div id="ammo">AMMO: ∞</div>
+      </div>
+      <div id="minimap"></div>
+      <div id="crosshair">+</div>
+      <div id="weapon-selector">
+        <div class="weapon-slot active" data-weapon="1">1</div>
+        <div class="weapon-slot" data-weapon="2">2</div>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.js"></script>
   </body>
 </html> 

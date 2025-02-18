@@ -3,174 +3,210 @@ import * as THREE from 'three';
 import Physics from './systems/Physics.js';
 import Input from './systems/Input.js';
 import Renderer from './systems/Renderer.js';
-import PortalRenderer from './systems/PortalRenderer.js';
-
 import Player from './components/Player.js';
-import WeaponManager from './components/WeaponManager.js';
-import Portal from './components/Portal.js';
+import PortalGun from './weapons/PortalGun.js';
+import NormalGun from './weapons/NormalGun.js';
 import Enemy from './components/Enemy.js';
-import Weapon from './components/Weapon.js';
-
-let lastTime = 0;
-
-// Initialize player and weapons
-const player = new Player();
-const weaponManager = new WeaponManager(player);
-const weapon = new Weapon(player);
-
-// Create portals
-const portalA = new Portal(0x00ff00); // Green portal
-const portalB = new Portal(0xff0000); // Red portal
-Renderer.scene.add(portalA.mesh);
-Renderer.scene.add(portalB.mesh);
-
-// Create some enemies
-const enemies = [
-  new Enemy(3, 1, -5),
-  new Enemy(-3, 1, -10),
-  new Enemy(0, 1, -15)
-];
-
-// Add enemies to the scene
-enemies.forEach((enemy) => {
-  Renderer.scene.add(enemy.mesh);
-});
-
-// Portal placement is now handled entirely in Weapon.js
-
-// === MINI-MAP SETUP ===
-const miniMapSize = { width: 200, height: 200 };
-const miniMapCam = new THREE.OrthographicCamera(
-  -25, 25, 25, -25, 0.1, 200
-);
-miniMapCam.position.set(0, 50, 0);
-miniMapCam.lookAt(0, 0, 0);
-Renderer.scene.add(miniMapCam);
-
-// === HUD SETUP ===
-const setupHUD = () => {
-  const hud = document.createElement('div');
-  hud.id = 'doom-hud';
-  hud.innerHTML = `
-    <div id="doom-stats">
-      <div id="doom-health">HEALTH: 100</div>
-      <div id="doom-ammo">AMMO: ∞</div>
-    </div>
-    <div id="doom-minimap"></div>
-  `;
-  document.body.appendChild(hud);
-
-  // Style the HUD
-  const style = document.createElement('style');
-  style.textContent = `
-    #doom-hud {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      pointer-events: none;
-      font-family: "Impact", sans-serif;
-      color: #ff0000;
-      text-shadow: 2px 2px 2px #000;
-    }
-    #doom-stats {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 2rem;
-      padding: 1rem;
-      background: rgba(0, 0, 0, 0.7);
-      border: 2px solid #ff0000;
-      font-size: 24px;
-    }
-    #doom-minimap {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      width: ${miniMapSize.width}px;
-      height: ${miniMapSize.height}px;
-      background: rgba(0, 0, 0, 0.7);
-      border: 2px solid #ff0000;
-    }
-  `;
-  document.head.appendChild(style);
-};
-
-setupHUD();
+import MapGenerator from './systems/MapGenerator.js';
+import PixelationPass from './systems/PixelationPass.js';
 
 // Game state
+let isGameStarted = false;
+let lastTime = 0;
+let player = null;
+let weapons = {};
+let activeWeaponIndex = 1;
+let enemies = [];
 let health = 100;
-const updateHUD = () => {
-  document.getElementById('doom-health').textContent = `HEALTH: ${health}`;
-  document.getElementById('doom-ammo').textContent = 'AMMO: ∞';
-};
+
+// UI Elements
+const startMenu = document.getElementById('start-menu');
+const gameUI = document.getElementById('game-ui');
+const healthDisplay = document.getElementById('health');
+const ammoDisplay = document.getElementById('ammo');
+const weaponSlots = document.querySelectorAll('.weapon-slot');
+
+// Initialize game systems
+const pixelationPass = new PixelationPass(4); // 4x pixel size
+const mapGenerator = new MapGenerator(Renderer.scene);
+
+function initGame() {
+  console.log('Initializing game...');
+  
+  // Create player
+  player = new Player();
+  console.log('Player created');
+
+  // Initialize weapons
+  weapons = {
+    1: new PortalGun(player),
+    2: new NormalGun(player)
+  };
+  weapons[1].activate(); // Start with portal gun
+  console.log('Weapons initialized');
+
+  // Generate random map
+  const rooms = mapGenerator.generateRandomMap(5);
+  console.log('Map generated with', rooms.length, 'rooms');
+
+  // Spawn enemies in random rooms
+  rooms.forEach(room => {
+    if (Math.random() > 0.5) {
+      const x = room.position.x + (Math.random() - 0.5) * 10;
+      const z = room.position.z + (Math.random() - 0.5) * 10;
+      const enemy = new Enemy(x, 1, z);
+      enemies.push(enemy);
+      Renderer.scene.add(enemy.mesh);
+    }
+  });
+  console.log('Enemies spawned:', enemies.length);
+
+  // Request pointer lock for FPS controls
+  document.body.requestPointerLock = document.body.requestPointerLock || 
+                                   document.body.mozRequestPointerLock ||
+                                   document.body.webkitRequestPointerLock;
+  
+  document.body.addEventListener('click', () => {
+    if (document.pointerLockElement !== document.body) {
+      document.body.requestPointerLock();
+    }
+  });
+
+  // Bind weapon switching
+  window.addEventListener('keydown', (e) => {
+    const key = e.key;
+    if (key >= '1' && key <= '2') {
+      switchWeapon(parseInt(key));
+    }
+  });
+
+  // Bind weapon slots UI
+  weaponSlots.forEach(slot => {
+    slot.addEventListener('click', () => {
+      const weaponId = parseInt(slot.dataset.weapon);
+      switchWeapon(weaponId);
+    });
+  });
+
+  // Bind shooting
+  window.addEventListener('mousedown', (e) => {
+    if (document.pointerLockElement !== document.body) return;
+
+    const activeWeapon = weapons[activeWeaponIndex];
+    if (activeWeapon) {
+      activeWeapon.fire();
+      updateHUD();
+    }
+  });
+
+  // Bind reloading
+  window.addEventListener('keydown', (e) => {
+    if (e.key.toLowerCase() === 'r') {
+      const activeWeapon = weapons[activeWeaponIndex];
+      if (activeWeapon) {
+        activeWeapon.reload();
+        updateHUD();
+      }
+    }
+  });
+
+  // Initialize Input system
+  Input.init();
+  console.log('Input system initialized');
+}
+
+function switchWeapon(index) {
+  if (weapons[activeWeaponIndex]) {
+    weapons[activeWeaponIndex].deactivate();
+  }
+  
+  activeWeaponIndex = index;
+  weapons[activeWeaponIndex].activate();
+
+  // Update UI
+  weaponSlots.forEach(slot => {
+    const slotIndex = parseInt(slot.dataset.weapon);
+    slot.classList.toggle('active', slotIndex === activeWeaponIndex);
+  });
+
+  updateHUD();
+}
+
+function updateHUD() {
+  const activeWeapon = weapons[activeWeaponIndex];
+  healthDisplay.textContent = `HEALTH: ${health}`;
+  ammoDisplay.textContent = `AMMO: ${activeWeapon.ammo === Infinity ? '∞' : activeWeapon.ammo}`;
+}
+
+function startGame() {
+  console.log('Starting game...');
+  isGameStarted = true;
+  startMenu.style.display = 'none';
+  gameUI.style.display = 'block';
+  
+  initGame();
+  lastTime = performance.now();
+  requestAnimationFrame(animate);
+  console.log('Game started!');
+}
 
 function animate(time) {
+  if (!isGameStarted) return;
+
   requestAnimationFrame(animate);
 
-  const delta = (time - lastTime) / 1000;
+  const delta = Math.min((time - lastTime) / 1000, 0.1); // Cap delta at 0.1s to prevent huge jumps
   lastTime = time;
 
+  // Update physics and game state
   Physics.update(delta);
-  player.update(delta);
-  weaponManager.update(delta);
-  weapon.update(delta);
+  
+  if (player) {
+    player.update(delta);
+  }
 
-  // Main scene render
-  Renderer.render();
-
-  // Mini-map render
-  Renderer.renderer.setViewport(20, window.innerHeight - miniMapSize.height - 20, 
-    miniMapSize.width, miniMapSize.height);
-  Renderer.renderer.setScissor(20, window.innerHeight - miniMapSize.height - 20,
-    miniMapSize.width, miniMapSize.height);
-  Renderer.renderer.setScissorTest(true);
-
-  // Update minimap camera position
-  miniMapCam.position.x = player.body.position.x;
-  miniMapCam.position.z = player.body.position.z;
-  miniMapCam.updateProjectionMatrix();
-
-  // Render minimap
-  Renderer.renderer.render(Renderer.scene, miniMapCam);
-
-  // Reset to main viewport
-  Renderer.renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
-  Renderer.renderer.setScissor(0, 0, window.innerWidth, window.innerHeight);
-  Renderer.renderer.setScissorTest(false);
-
-  // Update HUD
-  updateHUD();
-
-  // Update portals
-  if (portalA.active && portalB.active) {
-    // Check for portal teleportation
-    const playerPos = player.body.position;
-    const distA = portalA.mesh.position.distanceTo(playerPos);
-    const distB = portalB.mesh.position.distanceTo(playerPos);
-
-    const threshold = 1.0;
-    if (distA < threshold) {
-      player.body.position.copy(portalB.mesh.position);
-      player.body.velocity.set(0, 0, 0);
-    } else if (distB < threshold) {
-      player.body.position.copy(portalA.mesh.position);
-      player.body.velocity.set(0, 0, 0);
-    }
-
-    // Render portal views
-    PortalRenderer.renderPortals(portalA, portalB, player);
+  // Update active weapon
+  const activeWeapon = weapons[activeWeaponIndex];
+  if (activeWeapon) {
+    activeWeapon.update(delta);
   }
 
   // Update enemies
-  enemies.forEach((enemy) => enemy.update(delta));
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    const enemy = enemies[i];
+    if (enemy.health <= 0) {
+      // Remove dead enemies
+      Renderer.scene.remove(enemy.mesh);
+      Physics.world.remove(enemy.body);
+      enemies.splice(i, 1);
+    } else {
+      enemy.update(delta);
+    }
+  }
+
+  // Render with pixelation effect
+  pixelationPass.render(Renderer.renderer, Renderer.scene, Renderer.camera);
+
+  // Update HUD
+  updateHUD();
 }
 
-animate(0);
+// Start menu button handler
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('DOM loaded, setting up start button...');
+  const startButton = document.getElementById('start-button');
+  if (startButton) {
+    startButton.addEventListener('click', () => {
+      console.log('Start button clicked!');
+      startGame();
+    });
+  } else {
+    console.error('Start button not found!');
+  }
+});
 
 // Handle window resize
 window.addEventListener('resize', () => {
   Renderer.onWindowResize();
+  pixelationPass.onWindowResize();
 }); 

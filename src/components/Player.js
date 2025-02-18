@@ -53,8 +53,8 @@ class Player {
     let moveX = 0;
     let moveZ = 0;
 
-    if (Input.keys.forward) moveZ -= 1;
-    if (Input.keys.backward) moveZ += 1;
+    if (Input.keys.forward) moveZ += 1;
+    if (Input.keys.backward) moveZ -= 1;
     if (Input.keys.left) moveX -= 1;
     if (Input.keys.right) moveX += 1;
 

@@ -16,6 +16,9 @@ export default class Portal {
   }
 
   setPositionAndNormal(position, normal) {
+    // Slight offset so it doesn't clip inside the wall
+    position.addScaledVector(normal, 0.05);
+
     this.mesh.position.copy(position);
     // Align the portal plane with the normal
     // Quick hack: rotate plane to face normal

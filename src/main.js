@@ -33,41 +33,7 @@ enemies.forEach((enemy) => {
   Renderer.scene.add(enemy.mesh);
 });
 
-// Handle portal placement
-window.addEventListener('mousedown', (e) => {
-  if (document.pointerLockElement !== document.body) return;
-
-  const portal = e.button === 2 ? portalB : portalA;
-  const direction = new THREE.Vector3(0, 0, -1)
-    .applyAxisAngle(new THREE.Vector3(0, 1, 0), player.yaw)
-    .applyAxisAngle(new THREE.Vector3(1, 0, 0), player.pitch);
-
-  const rayFrom = new CANNON.Vec3(
-    player.body.position.x,
-    player.body.position.y + 0.5,
-    player.body.position.z
-  );
-  const rayTo = new CANNON.Vec3(
-    rayFrom.x + direction.x * 100,
-    rayFrom.y + direction.y * 100,
-    rayFrom.z + direction.z * 100
-  );
-
-  const result = Physics.world.rayTest(rayFrom, rayTo);
-  if (result.hasHit) {
-    const hitPoint = new THREE.Vector3(
-      result.hitPointWorld.x,
-      result.hitPointWorld.y,
-      result.hitPointWorld.z
-    );
-    const normal = new THREE.Vector3(
-      result.hitNormalWorld.x,
-      result.hitNormalWorld.y,
-      result.hitNormalWorld.z
-    );
-    portal.setPositionAndNormal(hitPoint, normal);
-  }
-});
+// Portal placement is now handled entirely in Weapon.js
 
 // Animation loop
 function animate(time) {

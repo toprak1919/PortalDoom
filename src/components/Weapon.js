@@ -26,31 +26,78 @@ class Weapon {
   }
 
   createPortalGunMesh() {
-    // Create gun body
-    const gunGeo = new THREE.BoxGeometry(0.2, 0.2, 0.5);
-    const gunMat = new THREE.MeshPhongMaterial({ color: 0x222222 });
-    this.gunMesh = new THREE.Mesh(gunGeo, gunMat);
+    // Create a group for the entire gun
+    this.gunMesh = new THREE.Group();
 
-    // Add gun to camera
-    Renderer.camera.add(this.gunMesh);
+    // Main body - larger box
+    const gunBodyGeo = new THREE.BoxGeometry(0.4, 0.4, 1);
+    const gunMat = new THREE.MeshPhongMaterial({ 
+      color: 0x558855,
+      metalness: 0.7,
+      roughness: 0.3
+    });
+    this.gunBody = new THREE.Mesh(gunBodyGeo, gunMat);
 
-    // Position gun in camera space
-    this.gunMesh.position.set(0.5, -0.3, -0.7);
+    // Barrel - larger cylinder
+    const barrelGeo = new THREE.CylinderGeometry(0.15, 0.2, 1.2, 16);
+    const barrelMat = new THREE.MeshPhongMaterial({ 
+      color: 0x229922,
+      metalness: 0.8,
+      roughness: 0.2
+    });
+    this.barrel = new THREE.Mesh(barrelGeo, barrelMat);
+    this.barrel.rotation.x = Math.PI / 2;
+    this.barrel.position.set(0, 0, -1.1);
 
-    // Store original Z for recoil
-    this.defaultGunZ = this.gunMesh.position.z;
-    this.isRecoiling = false;
-    this.recoilTimer = 0;
+    // Energy core - glowing sphere in the middle
+    const coreGeo = new THREE.SphereGeometry(0.1, 16, 16);
+    const coreMat = new THREE.MeshPhongMaterial({
+      color: 0x00ff00,
+      emissive: 0x00ff00,
+      emissiveIntensity: 0.5
+    });
+    this.core = new THREE.Mesh(coreGeo, coreMat);
+    this.core.position.set(0, 0.2, -0.3);
 
-    // Create muzzle flash
-    const flashGeo = new THREE.SphereGeometry(0.05, 8, 8);
-    const flashMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    // Top detail
+    const topDetailGeo = new THREE.BoxGeometry(0.2, 0.1, 0.4);
+    const topDetailMat = new THREE.MeshPhongMaterial({ color: 0x444444 });
+    this.topDetail = new THREE.Mesh(topDetailGeo, topDetailMat);
+    this.topDetail.position.set(0, 0.25, -0.2);
+
+    // Muzzle flash
+    const flashGeo = new THREE.SphereGeometry(0.15, 8, 8);
+    const flashMat = new THREE.MeshBasicMaterial({ 
+      color: 0x00ff00,
+      transparent: true,
+      opacity: 0.8
+    });
     this.muzzleFlash = new THREE.Mesh(flashGeo, flashMat);
-
-    // Add muzzle flash to gun tip
-    this.gunMesh.add(this.muzzleFlash);
-    this.muzzleFlash.position.set(0, 0, -0.3);
+    this.muzzleFlash.position.set(0, 0, -0.7);
     this.muzzleFlash.visible = false;
+
+    // Assemble gun parts
+    this.gunBody.add(this.barrel);
+    this.gunBody.add(this.core);
+    this.gunBody.add(this.topDetail);
+    this.barrel.add(this.muzzleFlash);
+    this.gunMesh.add(this.gunBody);
+
+    // Add to camera
+    Renderer.camera.add(this.gunMesh);
+    this.gunMesh.position.set(0.5, -0.3, -1.2);
+
+    // Animation properties
+    this.defaultGunZ = this.gunMesh.position.z;
+    this.defaultGunY = this.gunMesh.position.y;
+    this.defaultRotationX = 0;
+    this.gunMesh.rotation.x = this.defaultRotationX;
+    
+    // Animation states
+    this.isRecoiling = false;
+    this.isRotating = false;
+    this.recoilTimer = 0;
+    this.rotationTimer = 0;
     this.muzzleFlashTimer = 0;
   }
 
@@ -104,37 +151,68 @@ class Weapon {
       portal.setPositionAndNormal(hitPoint, normal);
     }
 
-    // Trigger recoil and muzzle flash
+    // Enhanced animation
     this.triggerRecoil();
     this.showMuzzleFlash();
+    this.triggerRotation();
   }
 
   triggerRecoil() {
-    this.gunMesh.position.z = this.defaultGunZ - 0.1;
+    this.gunMesh.position.z = this.defaultGunZ + 0.3; // Stronger recoil
+    this.gunMesh.position.y = this.defaultGunY + 0.1; // Slight upward kick
     this.isRecoiling = true;
-    this.recoilTimer = 0.1; // Recoil lasts 0.1 seconds
+    this.recoilTimer = 0.15;
+  }
+
+  triggerRotation() {
+    this.gunMesh.rotation.x = this.defaultRotationX - 0.3;
+    this.isRotating = true;
+    this.rotationTimer = 0.15;
   }
 
   showMuzzleFlash() {
     this.muzzleFlash.visible = true;
-    this.muzzleFlashTimer = 0.05; // Flash for 0.05 seconds
+    this.muzzleFlashTimer = 0.1;
+    
+    // Animate core glow
+    this.core.material.emissiveIntensity = 1.0;
   }
 
   update(delta) {
-    // Update recoil
+    // Recoil animation
     if (this.isRecoiling) {
       this.recoilTimer -= delta;
       if (this.recoilTimer <= 0) {
         this.gunMesh.position.z = this.defaultGunZ;
+        this.gunMesh.position.y = this.defaultGunY;
         this.isRecoiling = false;
+      } else {
+        // Smooth return
+        const t = 1 - (this.recoilTimer / 0.15);
+        this.gunMesh.position.z = this.defaultGunZ + 0.3 * (1 - t);
+        this.gunMesh.position.y = this.defaultGunY + 0.1 * (1 - t);
       }
     }
 
-    // Update muzzle flash
+    // Rotation animation
+    if (this.isRotating) {
+      this.rotationTimer -= delta;
+      if (this.rotationTimer <= 0) {
+        this.gunMesh.rotation.x = this.defaultRotationX;
+        this.isRotating = false;
+      } else {
+        // Smooth return
+        const t = 1 - (this.rotationTimer / 0.15);
+        this.gunMesh.rotation.x = this.defaultRotationX - 0.3 * (1 - t);
+      }
+    }
+
+    // Muzzle flash fade
     if (this.muzzleFlash.visible) {
       this.muzzleFlashTimer -= delta;
       if (this.muzzleFlashTimer <= 0) {
         this.muzzleFlash.visible = false;
+        this.core.material.emissiveIntensity = 0.5; // Reset core glow
       }
     }
 

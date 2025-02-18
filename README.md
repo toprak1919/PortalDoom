@@ -1,39 +1,73 @@
 # DOOM-Portal Hybrid Game
 
-A first-person shooter puzzle game that combines the fast-paced action of DOOM with the mind-bending portal mechanics of Portal.
+A first-person shooter puzzle game that combines the fast-paced action of DOOM with the mind-bending portal mechanics of Portal, built with Three.js and modern web technologies.
 
-## Project Overview
+## Features
 
-This MVP will be built using JavaScript and modern web technologies, focusing on core gameplay mechanics while keeping the scope manageable.
+### Core Mechanics
+- **First-Person Controls**
+  - WASD movement
+  - Mouse look
+  - Jumping with physics
+  - Collision detection
 
-### Core Features for MVP
+### Portal System
+- Two-portal system (entry/exit)
+- Portal gun mechanics
+- Surface detection for portal placement
+- Real-time portal view rendering
+- Seamless teleportation
 
-1. First-Person Camera and Movement
-   - WASD movement controls
-   - Mouse look
-   - Basic jumping mechanics
-   - Collision detection
+### Combat System
+- Weapon management system
+- Multiple weapons support
+- Ammo system with reloading
+- Enemy health system
+- Basic combat mechanics
 
-2. Portal Mechanics
-   - Two-portal system (entry/exit)
-   - Portal gun shooting mechanics
-   - Basic portal surface detection
-   - Portal view rendering
-   - Player teleportation between portals
+### Graphics
+- 3D rendering with Three.js
+- Physics simulation with Cannon.js
+- Portal view rendering using render-to-texture
+- Basic lighting and materials
 
-3. Combat Elements
-   - Basic weapon system
-   - Simple enemy AI
-   - Health system
-   - Basic combat mechanics
+## Prerequisites
 
-## Technical Stack
+- Node.js (LTS version recommended)
+- npm (comes with Node.js)
+- A modern web browser with WebGL support
 
-- **Engine**: Three.js for 3D rendering
-- **Physics**: Cannon.js or Ammo.js for physics calculations
-- **Audio**: Howler.js for sound effects
-- **Input**: Pointer Lock API for mouse controls
-- **Build Tool**: Vite.js for development and building
+## Installation
+
+1. Clone the repository:
+```bash
+git clone [repository-url]
+cd PortalDoom
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Start the development server:
+```bash
+npm run dev
+```
+
+4. Open your browser and navigate to `http://localhost:5173` (or the URL shown in your terminal)
+
+## Controls
+
+- **WASD**: Movement
+- **Mouse**: Look around
+- **Space**: Jump
+- **Left Click**: Fire weapon
+- **Right Click**: Place red portal
+- **Left Click**: Place green portal (when in portal mode)
+- **1-4**: Switch weapons
+- **R**: Reload weapon
+- **Esc**: Unlock mouse pointer
 
 ## Project Structure
 
@@ -41,115 +75,91 @@ This MVP will be built using JavaScript and modern web technologies, focusing on
 doom-portal/
 ├── src/
 │   ├── components/
-│   │   ├── Player.js
-│   │   ├── Portal.js
-│   │   ├── Weapon.js
-│   │   └── Enemy.js
+│   │   ├── Player.js       # Player controls and physics
+│   │   ├── Portal.js       # Portal mechanics
+│   │   ├── Enemy.js        # Enemy behavior and health
+│   │   └── WeaponManager.js # Weapon switching and management
+│   ├── weapons/
+│   │   ├── BaseWeapon.js   # Base weapon class
+│   │   └── Pistol.js       # Pistol implementation
 │   ├── systems/
-│   │   ├── Physics.js
-│   │   ├── Input.js
-│   │   ├── Audio.js
-│   │   └── Renderer.js
+│   │   ├── Physics.js      # Physics world setup
+│   │   ├── Input.js        # Input handling
+│   │   ├── Renderer.js     # Three.js setup
+│   │   ├── PortalRenderer.js # Portal view rendering
+│   │   └── Audio.js        # Sound system
 │   ├── utils/
-│   │   ├── MathUtils.js
-│   │   └── Constants.js
-│   ├── assets/
-│   │   ├── models/
-│   │   ├── textures/
-│   │   └── sounds/
-│   └── main.js
-├── public/
-├── index.html
-└── package.json
+│   │   ├── MathUtils.js    # Math helper functions
+│   │   └── Constants.js    # Game constants
+│   └── main.js             # Entry point
+├── public/                 # Static assets
+├── index.html             # HTML entry point
+├── package.json           # Dependencies and scripts
+└── vite.config.js         # Vite configuration
 ```
 
-## Development Phases
+## Technical Details
 
-### Phase 1: Basic Setup and Movement (Week 1)
-- [x] Project initialization with Vite.js
-- [ ] Three.js scene setup
-- [ ] First-person camera implementation
-- [ ] Basic WASD movement
-- [ ] Mouse look controls
-- [ ] Simple test environment
+### Rendering
+- Uses Three.js for 3D graphics
+- Portal rendering using render-to-texture technique
+- Dynamic lighting and materials
 
-### Phase 2: Portal Mechanics (Week 2-3)
-- [ ] Portal gun implementation
-- [ ] Portal placement mechanics
-- [ ] Portal rendering
-- [ ] Portal transport logic
-- [ ] Portal surface detection
+### Physics
+- Cannon.js (cannon-es) for physics simulation
+- Collision detection for portals and combat
+- Player movement with proper physics
 
-### Phase 3: Combat System (Week 4)
-- [ ] Weapon system
-- [ ] Basic enemy AI
-- [ ] Health and damage system
-- [ ] Simple combat interactions
+### Game Systems
+- Weapon system with extensible base class
+- Enemy system with health and damage
+- Portal system with view rendering
+- Input system with pointer lock
 
-### Phase 4: Level Design and Polish (Week 5)
-- [ ] Basic level design
-- [ ] Texture and material implementation
-- [ ] Sound effects
-- [ ] Basic UI elements
-- [ ] Performance optimization
+## Development
 
-## Getting Started
-
-1. Clone the repository
-2. Install dependencies:
+### Building for Production
 ```bash
-npm install
+npm run build
 ```
-3. Start development server:
+
+### Preview Production Build
 ```bash
-npm run dev
+npm run preview
 ```
-
-## Dependencies
-
-```json
-{
-  "dependencies": {
-    "three": "^0.160.0",
-    "cannon-es": "^0.20.0",
-    "howler": "^2.2.4"
-  },
-  "devDependencies": {
-    "vite": "^5.0.0"
-  }
-}
-```
-
-## Controls
-
-- **WASD**: Movement
-- **Mouse**: Look around
-- **Left Click**: Shoot portal 1
-- **Right Click**: Shoot portal 2
-- **Space**: Jump
-- **E**: Interact
-- **R**: Reload
-- **1-4**: Switch weapons
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a new Pull Request
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## Known Issues
+
+- Portal rendering might have visual artifacts at certain angles
+- Physics interactions through portals are simplified
+- Enemy AI is currently basic
+
+## Future Enhancements
+
+- [ ] Advanced enemy AI with pathfinding
+- [ ] More weapons (Shotgun, Rocket Launcher)
+- [ ] Puzzle mechanics (buttons, doors)
+- [ ] Level system with multiple maps
+- [ ] Save/load system
+- [ ] Advanced graphics effects
+- [ ] Sound effects and music
+- [ ] Multiplayer support
 
 ## License
 
-MIT License
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Next Steps After MVP
+## Acknowledgments
 
-- Advanced enemy AI
-- More weapons and power-ups
-- Complex puzzle mechanics
-- Multiple levels
-- Save/load system
-- Multiplayer support
-- Advanced graphics and effects
-- Custom level editor 
+- Three.js for 3D rendering
+- Cannon.js for physics
+- Vite.js for development tooling
+- DOOM and Portal for inspiration 

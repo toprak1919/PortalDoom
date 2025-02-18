@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>DOOM-Portal MVP</title>
+    <style>
+      body, html {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        height: 100%;
+        background: #000;
+        color: #fff;
+        font-family: sans-serif;
+      }
+      #info {
+        position: absolute;
+        top: 0;
+        left: 0;
+        padding: 1rem;
+        z-index: 9999;
+        background: rgba(0, 0, 0, 0.5);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="info">
+      <p>Click to lock pointer. WASD to move, mouse to look, SPACE to jump.</p>
+      <p>Left Click: Place Portal A, Right Click: Place Portal B</p>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html> 
